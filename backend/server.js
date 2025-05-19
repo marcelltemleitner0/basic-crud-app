@@ -9,23 +9,23 @@ app.use(cors())
 const connection = await mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  database: 'kocsik_db',
+  database: 'cars_db',
 });
 
 
 app.post('/car', async (req, res) => {
-  const { markaNev, modellNev } = req.body;
+  const { brands_name, models_name } = req.body;
 
   try {
 
-    const [{ insertId: markaId }] = await connection.query(
-      'INSERT INTO markak (nev) VALUES (?)',
-      [markaNev]
+    const [{ insertId: brand_id }] = await connection.query(
+      'INSERT INTO brands (name) VALUES (?)',
+      [brands_name]
     );
 
     await connection.query(
-      'INSERT INTO modellek (marka_id, modell_nev) VALUES (?, ?)',
-      [markaId, modellNev]
+      'INSERT INTO models (brand_id, model_name) VALUES (?, ?)',
+      [brand_id, models_name]
     );
 
     await connection.commit();
@@ -42,7 +42,7 @@ app.post('/car', async (req, res) => {
 app.get('/data', async (req, res) => {
   try {
     const [results] = await connection.query(
-      'SELECT markak.id, markak.nev, modellek.modell_nev FROM markak INNER JOIN modellek ON markak.id = modellek.marka_id'
+      'SELECT brands.id, brands.name, models.model_name FROM brands INNER JOIN models ON brands.id = models.brand_id'
     );
     
     res.json(results); 
@@ -56,7 +56,7 @@ app.get('/data', async (req, res) => {
 app.get('/third', async (req, res) => {
   try {
     const [results] = await connection.query(
-      'SELECT markak.id, markak.nev, modellek.modell_nev, kategoriak.kategoria_nev FROM markak INNER JOIN modellek ON markak.id = modellek.marka_id INNER JOIN kategoriak ON modellek.id = kategoriak.kategoria_id'
+      'SELECT brands.name AS brand_name, models.model_name, categories.category_name FROM categories INNER JOIN models ON categories.model_id = models.id INNER JOIN brands ON models.brand_id = brands.id;'
     );
     
     res.json(results); 
@@ -74,18 +74,20 @@ app.delete('/car/:id', async (req, res) => {
   try {
 
 
-    await connection.query(
-      'DELETE FROM modellek WHERE marka_id = ?',
+   await connection.query(
+      'DELETE FROM models WHERE brand_id = ?',
       [id]
     );
 
-    await connection.query(
-      'DELETE FROM markak WHERE id = ?',
+     await connection.query(
+      'DELETE FROM brands WHERE id = ?',
       [id]
     );
 
     await connection.commit();
 
+
+  
 
 
     res.json({ message: 'Brand and models deleted successfully' });
@@ -101,20 +103,20 @@ app.delete('/car/:id', async (req, res) => {
 
 app.put('/car/:id', async (req, res) => {
   const { id } = req.params;
-  const { markaNev, modellNev } = req.body;
+   const { brands_name, models_name } = req.body;
 
   try {
 
 
     await connection.query(
-      'UPDATE markak SET nev = ? WHERE id = ?',
-      [markaNev, id]
+      'UPDATE brands SET name = ? WHERE id = ?',
+      [brands_name, id]
     );
 
 
     await connection.query(
-      'UPDATE modellek SET modell_nev = ? WHERE marka_id = ?',
-      [modellNev, id]
+      'UPDATE models SET model_name = ? WHERE brand_id = ?',
+      [models_name, id]
     );
 
     await connection.commit();
